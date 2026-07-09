@@ -1,0 +1,156 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function userRole() {
+      return userDoc().role;
+    }
+
+    function userStatus() {
+      return userDoc().status;
+    }
+
+    function isActive() {
+      return isAuth() && userStatus() == 'active';
+    }
+
+    function isAdmin() {
+      return isActive() && userRole() == 'admin';
+    }
+
+    function isRh() {
+      return isActive() && userRole() == 'rh';
+    }
+
+    function isFormateur() {
+      return isActive() && userRole() == 'formateur';
+    }
+
+    function isTechnicien() {
+      return isActive() && userRole() == 'technicien';
+    }
+
+    function isAdminOrRh() {
+      return isAdmin() || isRh();
+    }
+
+    function isStaff() {
+      return isAdmin() || isRh() || isFormateur();
+    }
+
+    function targetUserRole() {
+      return get(/databases/$(database)/documents/users/$(userId)).data.role;
+    }
+
+    function rhCanAccessUser() {
+      return isRh() && targetUserRole() != 'admin';
+    }
+
+    function rhCanUpdateUser() {
+      return isRh() &&
+        resource.data.role != 'admin' &&
+        request.resource.data.role != 'admin';
+    }
+
+    match /users/{userId} {
+      allow read: if isAuth() && (
+        request.auth.uid == userId ||
+        isAdmin() ||
+        rhCanAccessUser() ||
+        (isFormateur() && resource.data.role == 'technicien')
+      );
+      allow create: if isAuth() && request.auth.uid == userId;
+      allow update: if isAdmin() ||
+        (rhCanUpdateUser()) ||
+        (request.auth.uid == userId &&
+         resource.data.status == 'incomplete' &&
+         request.resource.data.status == 'pending' &&
+         request.resource.data.role == resource.data.role) ||
+        (request.auth.uid == userId &&
+         !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'status']));
+      allow delete: if isAdmin();
+    }
+
+    match /categories/{id} {
+      allow read: if isActive();
+      allow write: if isFormateur() || isAdmin();
+    }
+
+    match /trainings/{trainingId} {
+      allow read: if isActive();
+      allow create, update, delete: if isFormateur() || isAdmin();
+
+      match /chapters/{chapterId} {
+        allow read: if isActive();
+        allow write: if isFormateur() || isAdmin();
+      }
+    }
+
+    match /quizzes/{id} {
+      allow read: if isActive();
+      allow write: if isFormateur() || isAdmin();
+    }
+
+    match /quizAttempts/{id} {
+      allow read: if isActive() && (resource.data.uid == request.auth.uid || isStaff());
+      allow create: if isTechnicien() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    match /certifications/{id} {
+      allow read: if isActive() && (resource.data.uid == request.auth.uid || isAdminOrRh() || isFormateur());
+      allow create: if isTechnicien() && request.resource.data.uid == request.auth.uid;
+      allow update: if isAdminOrRh() || isFormateur();
+      allow delete: if isAdmin();
+    }
+
+    match /progress/{id} {
+      allow read: if isActive() && (resource.data.uid == request.auth.uid || isStaff());
+      allow create, update: if isTechnicien() && request.resource.data.uid == request.auth.uid;
+      allow delete: if isAdmin();
+    }
+
+    match /forumPosts/{postId} {
+      allow read: if isActive();
+      allow create: if isActive() && request.resource.data.authorId == request.auth.uid;
+      allow update, delete: if isAdmin() || isFormateur() ||
+        (resource.data.authorId == request.auth.uid);
+
+      match /comments/{commentId} {
+        allow read: if isActive();
+        allow create: if isActive() && request.resource.data.authorId == request.auth.uid;
+        allow update, delete: if isAdmin() || isFormateur() ||
+          (resource.data.authorId == request.auth.uid);
+      }
+    }
+
+    match /meetings/{id} {
+      allow read: if isActive() && (
+        resource.data.createdBy == request.auth.uid ||
+        request.auth.uid in resource.data.invitedUids ||
+        isAdminOrRh()
+      );
+      allow create, update, delete: if isFormateur() || isAdmin();
+    }
+
+    match /notifications/{id} {
+      allow read, update: if isActive() && resource.data.uid == request.auth.uid;
+      allow create: if isStaff();
+      allow delete: if isAdmin();
+    }
+
+    match /auditLogs/{id} {
+      allow read: if isAdmin();
+      allow create: if isAuth();
+      allow update, delete: if false;
+    }
+  }
+}
