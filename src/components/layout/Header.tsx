@@ -3,6 +3,7 @@ import { Bell } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useAuth } from '@/context/AuthContext'
 import { useUnreadCount } from '@/hooks/useCollection'
+import aerodeskLogo from '@/assets/aerodesk-logo.svg'
 
 interface HeaderProps {
   title: string
@@ -19,20 +20,25 @@ export function Header({ title, subtitle }: HeaderProps) {
       animate={{ opacity: 1, y: 0 }}
       className="sticky top-0 z-20 bg-white/70 backdrop-blur-xl border-b border-gray-100/80 px-4 md:px-8 py-4 flex items-center justify-between"
     >
-      <div className="pl-12 lg:pl-0">
-        <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-          {title}
-        </h1>
-        {subtitle && <p className="text-sm text-text-muted mt-0.5">{subtitle}</p>}
+      <div className="flex items-center gap-3 pl-12 lg:pl-0">
+        <div className="hidden sm:flex w-12 h-12 rounded-2xl border border-primary/10 bg-white shadow-lg shadow-primary/10 items-center justify-center overflow-hidden">
+          <img src={aerodeskLogo} alt="AeroDesk" className="w-9 h-9 object-contain" />
+        </div>
+        <div>
+          <h1 className="text-xl md:text-2xl font-black tracking-tight bg-linear-to-r from-primary to-accent bg-clip-text text-transparent">
+            {title}
+          </h1>
+          {subtitle && <p className="text-sm text-text-muted mt-0.5">{subtitle}</p>}
+        </div>
       </div>
       <div className="flex items-center gap-4">
         <Link
           to="/notifications"
-          className="relative p-2.5 rounded-xl hover:bg-accent-light/50 transition-colors"
+          className="relative p-2.5 rounded-xl hover:bg-accent/10 hover:scale-105 active:scale-95 transition-all group"
         >
-          <Bell className="w-5 h-5 text-text-muted" />
+          <Bell className="w-5 h-5 text-text-muted group-hover:text-accent transition-colors" />
           {unread > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-danger text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">
+            <span className="absolute -top-0.5 -right-0.5 w-4.5 h-4.5 bg-danger text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse shadow-sm shadow-danger/50">
               {unread > 9 ? '9+' : unread}
             </span>
           )}

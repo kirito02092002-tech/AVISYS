@@ -26,6 +26,7 @@ import FormateurQuizPage from '@/pages/formateur/FormateurQuizPage'
 import FormateurProgressPage from '@/pages/formateur/FormateurProgressPage'
 import FormateurMeetingsPage from '@/pages/formateur/FormateurMeetingsPage'
 import FormateurForumPage from '@/pages/formateur/FormateurForumPage'
+import FormateurForumDetailPage from '@/pages/formateur/FormateurForumDetailPage'
 
 import RhDashboardPage from '@/pages/rh/RhDashboardPage'
 import RhUsersPage from '@/pages/rh/RhUsersPage'
@@ -84,6 +85,7 @@ export default function App() {
                   <Route path="/formateur/trainings/:id/progress" element={<FormateurProgressPage />} />
                   <Route path="/formateur/meetings" element={<FormateurMeetingsPage />} />
                   <Route path="/formateur/forum" element={<FormateurForumPage />} />
+                  <Route path="/formateur/forum/:id" element={<FormateurForumDetailPage />} />
                 </Route>
 
                 <Route element={<ProtectedRoute allowedRoles={['rh']} />}>

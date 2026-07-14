@@ -86,12 +86,19 @@ export function formatDateTime(dateInput: unknown): string {
 }
 
 export function sanitizeText(text: string): string {
+  return text.trim()
+}
+
+/** Decode HTML entities stored by the old sanitizeText version */
+export function decodeHtmlEntities(text: string): string {
+  if (!text) return ''
   return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'")
+    .replace(/&apos;/g, "'")
 }
 
 function getCloudinaryDownloadUrl(url: string): string {

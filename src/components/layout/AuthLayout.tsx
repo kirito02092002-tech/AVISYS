@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { motion } from 'framer-motion'
-import { Plane } from 'lucide-react'
+import aerodeskLogo from '@/assets/aerodesk-logo.svg'
 
 interface AuthLayoutProps {
   children: ReactNode
@@ -33,12 +33,13 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.1, type: 'spring' }}
-            className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-accent to-accent/70 shadow-lg shadow-accent/30 mb-4"
+            className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-white/10 ring-1 ring-white/15 shadow-lg shadow-accent/20 mb-4 backdrop-blur-sm"
           >
-            <Plane className="w-8 h-8 text-white" />
+            <img src={aerodeskLogo} alt="AeroDesk" className="w-12 h-12 object-contain" />
           </motion.div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">AVISYS</h1>
-          <p className="text-white/70 text-sm mt-1">{subtitle}</p>
+          <h1 className="text-4xl font-black text-white tracking-tight">AeroDesk</h1>
+          <p className="text-white/80 text-[11px] uppercase tracking-[0.32em] font-semibold mt-2">Système d'information aéronautique</p>
+          <p className="text-white/70 text-sm mt-3">{subtitle}</p>
         </div>
 
         <div className="backdrop-blur-xl bg-white/95 rounded-2xl shadow-2xl shadow-black/20 border border-white/20 p-8">

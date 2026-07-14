@@ -93,13 +93,32 @@ export default function RhDashboardPage() {
           <Card>
             <h3 className="font-semibold mb-4">Conformité par département</h3>
             {barData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={barData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="department" tick={{ fontSize: 11 }} />
-                  <YAxis domain={[0, 100]} />
-                  <Tooltip />
-                  <Bar dataKey="compliance" fill="#2E9CDB" radius={[4, 4, 0, 0]} />
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={barData} barSize={32} margin={{ top: 10, right: 10, left: 0, bottom: 8 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5edf5" />
+                  <XAxis
+                    dataKey="department"
+                    tick={{ fontSize: 11, fill: '#516072', fontFamily: 'Inter, system-ui, sans-serif' }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    domain={[0, 100]}
+                    tick={{ fontSize: 11, fill: '#516072', fontFamily: 'Inter, system-ui, sans-serif' }}
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(v) => `${v}%`}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: 12,
+                      border: 'none',
+                      boxShadow: '0 8px 28px rgba(15, 42, 74, 0.12)',
+                      fontSize: 12,
+                      fontFamily: 'Inter, system-ui, sans-serif',
+                    }}
+                  />
+                  <Bar dataKey="compliance" fill="#2E9CDB" radius={[10, 10, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (

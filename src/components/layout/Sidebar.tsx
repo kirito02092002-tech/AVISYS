@@ -18,11 +18,11 @@ import {
   LogOut,
   Menu,
   X,
-  ClipboardList,
 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useAuth } from '@/context/AuthContext'
 import type { UserRole } from '@/types'
+import aerodeskLogo from '@/assets/aerodesk-logo.svg'
 
 interface NavItem {
   to: string
@@ -78,17 +78,17 @@ export function Sidebar() {
     <>
       <div className="px-5 py-6 border-b border-white/10">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-accent flex items-center justify-center">
-            <ClipboardList className="w-5 h-5 text-white" />
+          <div className="w-14 h-14 rounded-2xl bg-white/10 ring-1 ring-white/15 backdrop-blur-sm flex items-center justify-center shadow-lg shadow-primary/20">
+            <img src={aerodeskLogo} alt="AeroDesk" className="w-10 h-10 object-contain" />
           </div>
-          <div>
-            <p className="font-bold text-white text-lg tracking-tight">AVISYS</p>
-            <p className="text-xs text-white/60">Formations aéronautiques</p>
+          <div className="min-w-0">
+            <p className="font-extrabold text-white text-base tracking-tight">AeroDesk</p>
+            <p className="text-[10px] uppercase tracking-[0.24em] text-white/65 font-semibold">Système d'information aéronautique</p>
           </div>
         </div>
       </div>
 
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
         {items.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
@@ -96,40 +96,40 @@ export function Sidebar() {
             onClick={() => setMobileOpen(false)}
             className={({ isActive }) =>
               clsx(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors relative',
+                'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all relative group',
                 isActive
                   ? 'bg-white/15 text-white shadow-sm'
-                  : 'text-white/70 hover:bg-white/10 hover:text-white',
+                  : 'text-white/60 hover:bg-white/8 hover:text-white',
               )
             }
           >
             {({ isActive }) => (
               <>
                 {isActive && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-accent rounded-r-full" />
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-accent rounded-r-full shadow-sm shadow-accent/50" />
                 )}
-                <Icon className="w-5 h-5 shrink-0" />
-                {label}
+                <Icon className={clsx('w-4.5 h-4.5 shrink-0 transition-transform', !isActive && 'group-hover:scale-110')} />
+                <span className="truncate">{label}</span>
               </>
             )}
           </NavLink>
         ))}
       </nav>
 
-      <div className="p-3 border-t border-white/10 space-y-1">
+      <div className="p-3 border-t border-white/10 space-y-0.5">
         <NavLink
           to="/profile"
           onClick={() => setMobileOpen(false)}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-white/70 hover:bg-white/10 hover:text-white"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/60 hover:bg-white/8 hover:text-white transition-all group"
         >
-          <User className="w-5 h-5" />
+          <User className="w-4 h-4 group-hover:scale-110 transition-transform" />
           Mon profil
         </NavLink>
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-white/70 hover:bg-white/10 hover:text-white"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/60 hover:bg-danger/20 hover:text-danger transition-all group"
         >
-          <LogOut className="w-5 h-5" />
+          <LogOut className="w-4 h-4 group-hover:scale-110 transition-transform" />
           Déconnexion
         </button>
       </div>
@@ -160,7 +160,7 @@ export function Sidebar() {
         </div>
       )}
 
-      <aside className="hidden lg:flex w-60 bg-gradient-to-b from-primary via-primary to-primary-dark flex-col h-screen fixed left-0 top-0 z-30 shadow-xl shadow-primary/20">
+      <aside className="hidden lg:flex w-60 bg-gradient-to-b from-[#0a1f38] via-primary to-[#0d2545] flex-col h-screen fixed left-0 top-0 z-30 shadow-2xl shadow-primary/30">
         {navContent}
       </aside>
     </>

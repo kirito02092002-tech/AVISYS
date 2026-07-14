@@ -1,8 +1,7 @@
 import { useState } from 'react'
-import { FolderOpen, Plus } from 'lucide-react'
-import { addDoc, collection, deleteDoc, doc, updateDoc } from 'firebase/firestore'
+import { FolderOpen, Plus, Layers, RefreshCw } from 'lucide-react'
+import { addDoc, collection, deleteDoc, doc, updateDoc, getDocs } from 'firebase/firestore'
 import { Header } from '@/components/layout/Header'
-import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input, Textarea, Select } from '@/components/ui/Input'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -11,13 +10,63 @@ import { useCollection } from '@/hooks/useCollection'
 import type { Category, CategoryType } from '@/types'
 import { CATEGORY_TYPE_LABELS } from '@/types'
 import { db } from '@/lib/firebase'
+import { useToast } from '@/context/ToastContext'
+
+const AVIATION_CATEGORIES: { name: string; type: CategoryType; description: string }[] = [
+  // Réglementaires
+  { name: 'Human Factors', type: 'reglementaire', description: 'Facteurs humains en maintenance aéronautique' },
+  { name: 'Fuel Tank Safety', type: 'reglementaire', description: 'Sécurité des réservoirs de carburant' },
+  { name: 'EWIS', type: 'reglementaire', description: 'Electrical Wiring Interconnection System' },
+  { name: 'Safety Management System', type: 'reglementaire', description: 'Système de gestion de la sécurité' },
+  { name: 'Dangerous Goods', type: 'reglementaire', description: 'Marchandises dangereuses' },
+  { name: 'Security Awareness', type: 'reglementaire', description: 'Sensibilisation à la sûreté' },
+  { name: 'Fire Safety', type: 'reglementaire', description: 'Sécurité incendie' },
+  { name: 'First Aid', type: 'reglementaire', description: 'Premiers secours' },
+  // Techniques
+  { name: 'Airbus A320', type: 'technique', description: "Formation sur l'avion Airbus A320" },
+  { name: 'Boeing B737', type: 'technique', description: "Formation sur l'avion Boeing B737" },
+  { name: 'ATR', type: 'technique', description: 'Formation sur les avions ATR' },
+  { name: 'Avionique', type: 'technique', description: 'Systèmes avioniques' },
+  { name: 'Moteurs', type: 'technique', description: 'Maintenance des moteurs' },
+  { name: 'Structures', type: 'technique', description: "Structures d'aéronefs" },
+  { name: 'Systèmes hydrauliques', type: 'technique', description: 'Systèmes hydrauliques' },
+  { name: 'Systèmes électriques', type: 'technique', description: 'Systèmes électriques' },
+  // Qualité
+  { name: 'Part-145', type: 'qualite', description: 'Réglementation Part-145' },
+  { name: 'Part-66', type: 'qualite', description: 'Réglementation Part-66' },
+  { name: 'Part-147', type: 'qualite', description: 'Réglementation Part-147' },
+  { name: 'Audits', type: 'qualite', description: 'Audits qualité' },
+  { name: 'Quality Assurance', type: 'qualite', description: 'Assurance qualité' },
+  { name: 'Compliance Monitoring', type: 'qualite', description: 'Surveillance de la conformité' },
+  // Internes
+  { name: 'Procédures internes', type: 'interne', description: "Procédures internes de l'organisation" },
+  { name: 'Procédures qualité', type: 'interne', description: 'Procédures qualité internes' },
+  { name: 'Processus de maintenance', type: 'interne', description: 'Processus de maintenance interne' },
+]
 
 export default function FormateurCategoriesPage() {
   const { data: categories } = useCollection<Category>('categories', [])
+  const { success: toastSuccess, error: toastError } = useToast()
   const [modal, setModal] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [seeding, setSeeding] = useState(false)
   const [form, setForm] = useState({ name: '', type: 'reglementaire' as CategoryType, description: '' })
+
+  const handleSeed = async () => {
+    setSeeding(true)
+    try {
+      const existing = await getDocs(collection(db, 'categories'))
+      const existingNames = new Set(existing.docs.map((d) => d.data().name as string))
+      const toCreate = AVIATION_CATEGORIES.filter((c) => !existingNames.has(c.name))
+      await Promise.all(toCreate.map((c) => addDoc(collection(db, 'categories'), c)))
+      toastSuccess(`${toCreate.length} catégorie(s) créée(s)`)
+    } catch {
+      toastError('Erreur lors de la création des catégories')
+    } finally {
+      setSeeding(false)
+    }
+  }
 
   const openCreate = () => {
     setEditId(null)
@@ -45,11 +94,25 @@ export default function FormateurCategoriesPage() {
     setDeleteId(null)
   }
 
+  const grouped = Object.entries(CATEGORY_TYPE_LABELS).map(([type, label]) => ({
+    type: type as CategoryType,
+    label,
+    items: categories.filter((c) => c.type === type),
+  }))
+
   return (
     <>
       <Header title="Catégories" subtitle="Organisation des formations" />
       <div className="p-4 md:p-8">
-        <div className="flex justify-end mb-4">
+        <div className="flex justify-end gap-2 mb-6">
+          <button
+            onClick={handleSeed}
+            disabled={seeding}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm font-medium text-text-muted hover:border-accent/40 hover:text-accent transition-all disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${seeding ? 'animate-spin' : ''}`} />
+            Initialiser les catégories aviation
+          </button>
           <Button onClick={openCreate}><Plus className="w-4 h-4" /> Ajouter</Button>
         </div>
 
@@ -57,29 +120,43 @@ export default function FormateurCategoriesPage() {
           <EmptyState
             icon={FolderOpen}
             title="Aucune catégorie"
-            description="Créez votre première catégorie de formation."
+            description="Créez votre première catégorie ou initialisez les catégories aviation."
             actionLabel="Créer une catégorie"
             onAction={openCreate}
           />
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {categories.map((cat) => (
-              <Card key={cat.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => openEdit(cat)}>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <span className="text-xs font-medium text-accent uppercase">{CATEGORY_TYPE_LABELS[cat.type]}</span>
-                    <h3 className="font-semibold mt-1">{cat.name}</h3>
-                    <p className="text-sm text-text-muted mt-2 line-clamp-2">{cat.description}</p>
-                  </div>
-                  <FolderOpen className="w-8 h-8 text-accent/40" />
+          <div className="space-y-8">
+            {grouped.map(({ type, label, items }) => items.length === 0 ? null : (
+              <div key={type}>
+                <div className="flex items-center gap-2 mb-3">
+                  <Layers className="w-4 h-4 text-accent" />
+                  <h3 className="font-bold text-sm uppercase tracking-wide text-text">{label}</h3>
+                  <span className="text-xs text-text-muted">({items.length})</span>
                 </div>
-                <button
-                  className="text-xs text-danger mt-4 hover:underline"
-                  onClick={(e) => { e.stopPropagation(); setDeleteId(cat.id) }}
-                >
-                  Supprimer
-                </button>
-              </Card>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                  {items.map((cat) => (
+                    <div
+                      key={cat.id}
+                      className="group bg-white rounded-xl border border-gray-100 p-4 hover:shadow-md hover:border-accent/20 transition-all cursor-pointer"
+                      onClick={() => openEdit(cat)}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-sm text-text group-hover:text-accent transition-colors truncate">{cat.name}</h4>
+                          <p className="text-xs text-text-muted mt-1 line-clamp-2 leading-relaxed">{cat.description}</p>
+                        </div>
+                        <FolderOpen className="w-5 h-5 text-accent/30 group-hover:text-accent/60 shrink-0 ml-2 transition-colors" />
+                      </div>
+                      <button
+                        className="text-xs text-danger mt-3 hover:underline"
+                        onClick={(e) => { e.stopPropagation(); setDeleteId(cat.id) }}
+                      >
+                        Supprimer
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         )}

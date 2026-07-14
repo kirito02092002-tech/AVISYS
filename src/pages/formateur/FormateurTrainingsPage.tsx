@@ -1,12 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { BookOpen, Plus, Edit, BarChart3, HelpCircle } from 'lucide-react'
+import { BookOpen, Plus, Edit3, BarChart2, HelpCircle, Clock, Users } from 'lucide-react'
 import { addDoc, collection, getDocs, query, where } from 'firebase/firestore'
 import { Header } from '@/components/layout/Header'
-import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input, Textarea, Select } from '@/components/ui/Input'
-import { ProgressBar } from '@/components/ui/ProgressBar'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { useCollection } from '@/hooks/useCollection'
 import type { Training, Category, Progress, AppUser } from '@/types'
@@ -14,6 +12,20 @@ import { CATEGORY_TYPE_LABELS } from '@/types'
 import { db } from '@/lib/firebase'
 import { useAuth } from '@/context/AuthContext'
 import { useToast } from '@/context/ToastContext'
+
+const CATEGORY_ACCENT: Record<string, string> = {
+  reglementaire: 'from-warning to-orange-400',
+  technique: 'from-accent to-blue-400',
+  qualite: 'from-success to-emerald-400',
+  interne: 'from-purple-500 to-violet-400',
+}
+
+const CATEGORY_BG: Record<string, string> = {
+  reglementaire: 'bg-warning/10 text-warning',
+  technique: 'bg-accent/10 text-accent',
+  qualite: 'bg-success/10 text-success',
+  interne: 'bg-purple-500/10 text-purple-600',
+}
 
 export default function FormateurTrainingsPage() {
   const { profile } = useAuth()
@@ -23,16 +35,12 @@ export default function FormateurTrainingsPage() {
   const { data: progressList } = useCollection<Progress>('progress', [])
   const [modal, setModal] = useState(false)
   const [creating, setCreating] = useState(false)
-  const [form, setForm] = useState({
-    title: '',
-    description: '',
-    categoryId: '',
-    duration: 60,
-  })
+  const [form, setForm] = useState({ title: '', description: '', categoryId: '', duration: 60 })
 
   const myTrainings = trainings.filter((t) => t.createdBy === profile?.uid)
 
   const getCategoryName = (id: string) => categories.find((c) => c.id === id)?.name ?? '—'
+
   const getAvgProgress = (trainingId: string) => {
     const tp = progressList.filter((p) => p.trainingId === trainingId)
     return tp.length ? Math.round(tp.reduce((a, p) => a + p.percentage, 0) / tp.length) : 0
@@ -41,18 +49,15 @@ export default function FormateurTrainingsPage() {
   const handleCreate = async () => {
     setCreating(true)
     try {
-      // Query active technicians directly to avoid race condition with users collection
       const snap = await getDocs(query(
         collection(db, 'users'),
         where('role', '==', 'technicien'),
         where('status', '==', 'active'),
       ))
       const activeTechniciens = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as AppUser & { id: string })
-
       if (activeTechniciens.length === 0) {
         warning('Aucun technicien actif trouvé. La formation sera créée sans assignation.')
       }
-
       await addDoc(collection(db, 'trainings'), {
         ...form,
         duration: Number(form.duration),
@@ -73,7 +78,7 @@ export default function FormateurTrainingsPage() {
     <>
       <Header title="Formations" subtitle="Gestion du catalogue" />
       <div className="p-4 md:p-8">
-        <div className="flex justify-end mb-4">
+        <div className="flex justify-end mb-6">
           <Button onClick={() => setModal(true)}><Plus className="w-4 h-4" /> Nouvelle formation</Button>
         </div>
 
@@ -86,30 +91,61 @@ export default function FormateurTrainingsPage() {
             onAction={() => setModal(true)}
           />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
             {myTrainings.map((t) => {
               const cat = categories.find((c) => c.id === t.categoryId)
+              const catType = cat?.type ?? 'technique'
+              const avg = getAvgProgress(t.id)
+
               return (
-                <Card key={t.id}>
-                  <span className="text-xs font-medium text-accent">
-                    {cat ? CATEGORY_TYPE_LABELS[cat.type] : getCategoryName(t.categoryId)}
-                  </span>
-                  <h3 className="font-semibold mt-1">{t.title}</h3>
-                  <p className="text-sm text-text-muted mt-1 line-clamp-2">{t.description}</p>
-                  <p className="text-xs text-text-muted mt-2">{t.duration} min · {t.assignedTo?.length ?? 0} techniciens</p>
-                  <ProgressBar value={getAvgProgress(t.id)} className="mt-3" />
-                  <div className="flex gap-2 mt-4">
-                    <Link to={`/formateur/trainings/${t.id}/edit`}>
-                      <Button size="sm" variant="secondary"><Edit className="w-3 h-3" /> Éditer</Button>
-                    </Link>
-                    <Link to={`/formateur/trainings/${t.id}/quiz`}>
-                      <Button size="sm" variant="secondary"><HelpCircle className="w-3 h-3" /> Quiz</Button>
-                    </Link>
-                    <Link to={`/formateur/trainings/${t.id}/progress`}>
-                      <Button size="sm" variant="secondary"><BarChart3 className="w-3 h-3" /></Button>
-                    </Link>
+                <div
+                  key={t.id}
+                  className="group bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-200"
+                >
+                  <div className={`h-1.5 bg-gradient-to-r ${CATEGORY_ACCENT[catType] ?? CATEGORY_ACCENT.technique}`} />
+                  <div className="p-5">
+                    <span className={`inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full ${CATEGORY_BG[catType] ?? CATEGORY_BG.technique}`}>
+                      {cat ? CATEGORY_TYPE_LABELS[cat.type] : getCategoryName(t.categoryId)}
+                    </span>
+                    <h3 className="font-bold text-base text-text mt-2 mb-1 leading-snug group-hover:text-accent transition-colors line-clamp-2">
+                      {t.title}
+                    </h3>
+                    <p className="text-sm text-text-muted line-clamp-2 mb-4 leading-relaxed">{t.description}</p>
+                    <div className="flex items-center gap-4 mb-4 text-xs text-text-muted">
+                      <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{t.duration} min</span>
+                      <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" />{t.assignedTo?.length ?? 0} technicien(s)</span>
+                    </div>
+                    <div className="mb-5">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs text-text-muted">Progression moyenne</span>
+                        <span className="text-xs font-bold text-text">{avg}%</span>
+                      </div>
+                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full bg-gradient-to-r ${CATEGORY_ACCENT[catType] ?? CATEGORY_ACCENT.technique} transition-all duration-500`}
+                          style={{ width: `${avg}%` }}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Link to={`/formateur/trainings/${t.id}/edit`} className="flex-1">
+                        <button className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-semibold bg-accent/10 text-accent hover:bg-accent hover:text-white transition-all">
+                          <Edit3 className="w-3.5 h-3.5" />Éditer
+                        </button>
+                      </Link>
+                      <Link to={`/formateur/trainings/${t.id}/quiz`} className="flex-1">
+                        <button className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-semibold bg-purple-500/10 text-purple-600 hover:bg-purple-500 hover:text-white transition-all">
+                          <HelpCircle className="w-3.5 h-3.5" />Quiz
+                        </button>
+                      </Link>
+                      <Link to={`/formateur/trainings/${t.id}/progress`}>
+                        <button className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-semibold bg-success/10 text-success hover:bg-success hover:text-white transition-all" title="Progression">
+                          <BarChart2 className="w-3.5 h-3.5" />
+                        </button>
+                      </Link>
+                    </div>
                   </div>
-                </Card>
+                </div>
               )
             })}
           </div>
@@ -118,9 +154,9 @@ export default function FormateurTrainingsPage() {
 
       {modal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setModal(false)} />
-          <div className="relative bg-surface rounded-xl p-6 w-full max-w-md space-y-4">
-            <h3 className="font-semibold">Nouvelle formation</h3>
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setModal(false)} />
+          <div className="relative bg-white rounded-2xl p-6 w-full max-w-md space-y-4 shadow-2xl">
+            <h3 className="font-bold text-lg">Nouvelle formation</h3>
             <Input label="Titre" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
             <Textarea label="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
             <Select

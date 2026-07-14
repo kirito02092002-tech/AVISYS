@@ -22,7 +22,7 @@ const BORDER_COLORS: Record<string, string> = {
   general: 'border-l-accent', technique: 'border-l-success', reglementaire: 'border-l-warning',
 }
 
-export default function TechnicienForumDetailPage() {
+export default function FormateurForumDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { profile } = useAuth()
   const { success } = useToast()
@@ -58,13 +58,13 @@ export default function TechnicienForumDetailPage() {
     })
     setReply('')
     success('Réponse publiée')
-    await loadComments()
+    loadComments()
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
-      void handleReply()
+      handleReply()
     }
   }
 
@@ -78,14 +78,14 @@ export default function TechnicienForumDetailPage() {
     if (!id) return
     await deleteDoc(doc(db, 'forumPosts', id))
     success('Publication supprimée')
-    navigate('/forum')
+    navigate('/formateur/forum')
   }
 
   const moderatePost = async () => {
     if (!id) return
     await updateDoc(doc(db, 'forumPosts', id), { moderated: true })
     success('Publication masquée')
-    navigate('/forum')
+    navigate('/formateur/forum')
   }
 
   if (!post) {
@@ -96,14 +96,16 @@ export default function TechnicienForumDetailPage() {
     <>
       <Header title="Discussion" subtitle={`${CATEGORY_LABELS[post.category] ?? post.category} · ${post.authorName}`} />
       <div className="p-4 md:p-8 max-w-3xl mx-auto space-y-4 pb-36">
+
         <button
-          onClick={() => navigate('/forum')}
+          onClick={() => navigate('/formateur/forum')}
           className="flex items-center gap-1.5 text-sm text-text-muted hover:text-accent transition-colors group"
         >
           <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
           Retour au forum
         </button>
 
+        {/* Post card */}
         <div className={`bg-white rounded-xl shadow-sm border-l-4 border-r border-t border-b border-gray-100 overflow-hidden ${BORDER_COLORS[post.category] ?? 'border-l-gray-300'}`}>
           <div className="p-5">
             <div className="flex items-start justify-between gap-3">
@@ -124,10 +126,10 @@ export default function TechnicienForumDetailPage() {
                 <p className="text-sm text-text whitespace-pre-wrap leading-relaxed">{decodeHtmlEntities(post.content)}</p>
               </div>
               <div className="flex flex-col gap-1 shrink-0">
-                <button onClick={() => void moderatePost()} title="Masquer" className="p-2 rounded-lg hover:bg-warning/10 text-text-muted hover:text-warning transition-colors">
+                <button onClick={moderatePost} title="Masquer" className="p-2 rounded-lg hover:bg-warning/10 text-text-muted hover:text-warning transition-colors">
                   <EyeOff className="w-4 h-4" />
                 </button>
-                <button onClick={() => void deletePost()} title="Supprimer" className="p-2 rounded-lg hover:bg-danger/10 text-text-muted hover:text-danger transition-colors">
+                <button onClick={deletePost} title="Supprimer" className="p-2 rounded-lg hover:bg-danger/10 text-text-muted hover:text-danger transition-colors">
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
@@ -135,6 +137,7 @@ export default function TechnicienForumDetailPage() {
           </div>
         </div>
 
+        {/* Replies */}
         <div className="space-y-2">
           <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider px-1">
             {comments.length} réponse{comments.length !== 1 ? 's' : ''}
@@ -159,7 +162,7 @@ export default function TechnicienForumDetailPage() {
                   </div>
                 </div>
                 <button
-                  onClick={() => void deleteComment(c.id)}
+                  onClick={() => deleteComment(c.id)}
                   className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-danger/10 text-danger transition-all shrink-0"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -171,6 +174,7 @@ export default function TechnicienForumDetailPage() {
         </div>
       </div>
 
+      {/* Fixed reply bar */}
       <div className="fixed bottom-0 left-0 lg:left-60 right-0 bg-white/90 backdrop-blur-xl border-t border-gray-100 p-4 z-10">
         <div className="max-w-3xl mx-auto flex gap-3 items-end">
           <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-sm font-bold shrink-0">
@@ -186,7 +190,7 @@ export default function TechnicienForumDetailPage() {
               rows={2}
             />
             <button
-              onClick={() => void handleReply()}
+              onClick={handleReply}
               disabled={!reply.trim()}
               className="absolute right-3 bottom-3 p-1.5 rounded-lg bg-accent text-white hover:bg-accent/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:shadow-md"
             >
